@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的 3D 小島（範本）</title>
+<!--
+  使用方法：
+  1. 在電腦上雙擊這個檔案，用 Chrome 或 Safari 打開（不用網路；旁邊的 lib 資料夾要一起留著）。
+  2. 用記事本打開這個檔案，只改下面「改這裡」那一段的島名和島嶼內容，存檔後重新整理。
+  3. 想加更多功能，把整個檔案貼給 Claude，說「用這個範本幫我加上【功能】」。
+-->
+<style>
+:root{--ink:#1B382B;--muted:#4f6357;--paper:#fffaf0;--line:#d9ccb2;--accent:#b8501f;--sea:#bfe3e8}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--sea)}
+#scene{position:fixed;inset:0}
+#scene canvas{display:block;width:100%;height:100%;touch-action:none}
+.labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.lab{position:absolute;transform:translate(-50%,-100%);background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700;white-space:nowrap;pointer-events:auto;cursor:pointer;min-height:32px}
+.lab:hover,.lab:focus-visible,.lab.on{background:var(--ink);color:var(--paper);outline:none}
+header{position:fixed;left:16px;top:16px;right:16px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;pointer-events:none}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 16px;box-shadow:0 4px 16px rgba(20,40,30,.12);pointer-events:auto}
+h1{margin:0;font-size:22px}
+.sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.tabs{display:flex;gap:6px;margin-left:auto}
+button{font:inherit;font-size:15px;min-height:44px;min-width:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#panel{position:fixed;right:16px;bottom:16px;width:min(340px,calc(100% - 32px));max-height:50vh;overflow:auto}
+#panel[hidden],#text[hidden]{display:none}
+#panel h2{margin:0 0 6px;font-size:18px}
+#panel p{margin:0 0 8px;font-size:15px;line-height:1.6}
+#panel ul{margin:0;padding-left:20px;font-size:15px;line-height:1.7}
+.close{float:right;margin:-4px -6px 0 8px}
+#text{position:fixed;inset:88px 16px 16px;overflow:auto;max-width:720px;margin:0 auto}
+#text h2{font-size:18px;margin:16px 0 4px}
+#text p,#text li{font-size:15px;line-height:1.7}
+.foot{font-size:13px;color:var(--muted);margin-top:16px}
+@media (max-width:600px){#panel{right:16px;left:16px;width:auto;max-height:42vh}h1{font-size:19px}}
+</style>
+</head>
+<body>
+<div id="scene" aria-hidden="true"></div>
+<div class="labels" id="labels"></div>
+
+<header>
+  <div class="card"><h1 id="title"></h1><p class="sub" id="intro"></p></div>
+  <div class="tabs card" role="group" aria-label="檢視方式">
+    <button id="b3d" aria-pressed="true">3D 島</button>
+    <button id="btext" aria-pressed="false">文字版</button>
+  </div>
+</header>
+
+<section id="panel" class="card" hidden aria-live="polite">
+  <button class="close" id="close" aria-label="關閉說明">×</button>
+  <h2 id="pt"></h2><p id="pd"></p><ul id="pb"></ul>
+</section>
+
+<section id="text" class="card" hidden>
+  <div id="textBody"></div>
+  <p class="foot">這是 3D 島的文字版，內容跟 3D 畫面一樣。</p>
+</section>
+
+<!-- 3D 引擎（three.js r128，MIT 授權）放在旁邊的 lib 資料夾，沒網路也能打開；搬檔案時 lib 要一起帶走 -->
+<script src="lib/three.min.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script>
+/* ============ 改這裡：島名與島嶼內容 ============ */
+const ISLAND = {
+  name: '我的小島',
+  intro: '一句話介紹：這座島代表什麼、給誰看',
+  isles: [
+    { name: '諮詢窗口', what: '第一次來的人先到這裡', blocks: ['櫃台', '等候區'], color: '#7fb77e' },
+    { name: '主教室島', what: '課程與工作坊場地', blocks: ['上午場', '下午場', '晚場'], color: '#e8a35a' },
+    { name: '共享工位', what: '夥伴平常工作的地方', blocks: ['流動工位', '會議桌'], color: '#6fa8c9' },
+    { name: '產品工坊', what: '自己的產品與作品', blocks: ['作品牆', '試用區'], color: '#c98fb5' }
+  ]
+};
+/* ============ 改到這裡就好，下面是程式 ============ */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+$('title').textContent = ISLAND.name;
+$('intro').textContent = ISLAND.intro;
+document.title = ISLAND.name;
+
+// 文字版
+$('textBody').innerHTML = `<h1 style="font-size:20px;margin:0">${esc(ISLAND.name)}</h1><p>${esc(ISLAND.intro)}</p>` +
+  ISLAND.isles.map(i => `<h2>${esc(i.name)}</h2><p>${esc(i.what)}</p><ul>${i.blocks.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`).join('');
+
+if (!window.THREE) {
+  // 沒網路時，至少看得到文字版
+  showText(true);
+  $('b3d').disabled = true;
+  $('textBody').insertAdjacentHTML('afterbegin', '<p><b>3D 引擎沒有載入：</b>請確認這個檔案旁邊有 lib 資料夾，再重新整理。</p>');
+} else {
+  start();
+}
+
+function start() {
+  const host = $('scene');
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+  host.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#bfe3e8');
+  scene.fog = new THREE.Fog('#bfe3e8', 60, 140);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+  cam.position.set(0, 22, 26);
+  const ctl = new THREE.OrbitControls(cam, renderer.domElement);
+  ctl.enableDamping = !reduce;
+  ctl.maxPolarAngle = 1.25; ctl.minDistance = 10;
+
+  scene.add(new THREE.HemisphereLight('#fff6e0', '#5d8f8c', 0.6));
+  const sun = new THREE.DirectionalLight('#ffe2b0', 1.35);
+  sun.position.set(12, 20, 8); sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20 });
+  scene.add(sun);
+
+  // 海
+  const sea = new THREE.Mesh(new THREE.CircleGeometry(80, 48), new THREE.MeshStandardMaterial({ color: '#3f9fae', roughness: 0.5 }));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -0.4; sea.receiveShadow = true; scene.add(sea);
+
+  const hex = new THREE.CylinderGeometry(1, 1, 1, 6);
+  const sand = new THREE.MeshStandardMaterial({ color: '#f0d9a8', roughness: 0.9 });
+  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 });
+
+  // 中央廣場
+  const hub = new THREE.Mesh(hex, sand); hub.scale.set(2.4, 0.6, 2.4); hub.receiveShadow = true; scene.add(hub);
+
+  const n = ISLAND.isles.length, R = n > 4 ? 9 : 8;
+  const isles = ISLAND.isles.map((d, k) => {
+    const a = k / n * Math.PI * 2 - Math.PI / 2, x = Math.cos(a) * R, z = Math.sin(a) * R;
+    const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
+    // 六角地塊：中間一塊加周圍六塊，高低不一
+    const spots = [[0, 0]].concat([...Array(6)].map((_, j) => [Math.cos(j * Math.PI / 3) * 1.75, Math.sin(j * Math.PI / 3) * 1.75]));
+    spots.forEach(([px, pz], j) => {
+      const h = 0.6 + ((k * 7 + j * 3) % 4) * 0.12;
+      const t = new THREE.Mesh(hex, j ? sand : M(d.color));
+      t.scale.set(0.98, h, 0.98); t.position.set(px, h / 2 - 0.3, pz);
+      t.castShadow = t.receiveShadow = true; g.add(t);
+    });
+    // 小房子
+    const house = new THREE.Group(); house.position.y = 0.55; g.add(house);
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 0.9), M('#fff8ec')); wall.position.y = 0.4; wall.castShadow = true; house.add(wall);
+    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.6, 4), M(d.color)); roof.position.y = 1.1; roof.rotation.y = Math.PI / 4; roof.castShadow = true; house.add(roof);
+    // 小樹
+    [[1.6, 0.6], [-1.3, 1.1], [0.4, -1.6]].forEach(([tx, tz]) => {
+      const tree = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), M('#4f8a4f'));
+      tree.position.set(tx, 1.0, tz); tree.castShadow = true; g.add(tree);
+    });
+    // 橋
+    const len = R - 4.2, bridge = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, len), M('#b88a5a'));
+    bridge.position.set(Math.cos(a) * (2.4 + len / 2), 0.05, Math.sin(a) * (2.4 + len / 2));
+    bridge.rotation.y = -a + Math.PI / 2; bridge.receiveShadow = true; scene.add(bridge);
+    // 名牌（按鈕，鍵盤可操作）
+    const lab = document.createElement('button');
+    lab.className = 'lab'; lab.textContent = d.name; lab.setAttribute('aria-label', `${d.name}：看說明`);
+    lab.onclick = () => pick(k);
+    $('labels').appendChild(lab);
+    return { d, g, house, lab, pos: new THREE.Vector3(x, 0, z) };
+  });
+
+  // 點島：鏡頭飛過去、顯示說明
+  let target = new THREE.Vector3(), fly = 0, cur = -1;
+  function pick(k) {
+    cur = k; const i = isles[k];
+    isles.forEach((o, j) => o.lab.classList.toggle('on', j === k));
+    $('pt').textContent = i.d.name; $('pd').textContent = i.d.what;
+    $('pb').innerHTML = i.d.blocks.map(b => `<li>${esc(b)}</li>`).join('');
+    $('panel').hidden = false;
+    target.copy(i.pos); fly = reduce ? 1 : 0.0001;
+    if (reduce) { ctl.target.copy(target); }
+  }
+  $('close').onclick = () => { $('panel').hidden = true; isles.forEach(o => o.lab.classList.remove('on')); if (cur >= 0) isles[cur].lab.focus(); cur = -1; target.set(0, 0, 0); fly = reduce ? 1 : 0.0001; if (reduce) ctl.target.set(0, 0, 0); };
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('panel').hidden) $('close').onclick(); });
+
+  // 點 3D 畫面上的島也可以
+  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
+  renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+  renderer.domElement.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+    mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+    ray.setFromCamera(mouse, cam);
+    const hit = ray.intersectObjects(isles.map(o => o.g), true)[0];
+    if (hit) { const k = isles.findIndex(o => { let p = hit.object; while (p) { if (p === o.g) return true; p = p.parent; } return false; }); if (k >= 0) pick(k); }
+  });
+
+  function resize() {
+    renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
+    // 依螢幕比例算鏡頭距離，讓整圈島都在畫面裡（手機直式會拉遠一點）
+    const fit = R + 4, vt = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), d = Math.max(fit / vt, fit / (vt * cam.aspect)) * 0.82;
+    const dir = cam.position.clone().sub(ctl.target).setLength(d); cam.position.copy(ctl.target).add(dir); ctl.maxDistance = d * 1.6; scene.fog.near = d * 1.2; scene.fog.far = d * 3;
+  }
+  addEventListener('resize', resize); resize();
+
+  const v = new THREE.Vector3(), clock = new THREE.Clock();
+  (function loop() {
+    requestAnimationFrame(loop);
+    const t = clock.getElapsedTime();
+    if (fly > 0 && fly < 1) { fly = Math.min(1, fly + 0.03); ctl.target.lerp(target, 0.08); if (fly >= 1) ctl.target.copy(target); }
+    if (!reduce) isles.forEach((o, k) => { o.house.position.y = 0.55 + Math.sin(t * 1.2 + k) * 0.04; });
+    ctl.update();
+    renderer.render(scene, cam);
+    // 名牌跟著島走
+    isles.forEach(o => {
+      v.copy(o.pos); v.y = 2.4; v.project(cam);
+      const off = v.z > 1;
+      o.lab.style.display = off || !$('text').hidden ? 'none' : '';
+      o.lab.style.left = (v.x + 1) / 2 * innerWidth + 'px';
+      o.lab.style.top = (1 - v.y) / 2 * innerHeight + 'px';
+    });
+  })();
+}
+
+function showText(on) {
+  $('text').hidden = !on; $('scene').style.visibility = on ? 'hidden' : '';
+  $('b3d').setAttribute('aria-pressed', !on); $('btext').setAttribute('aria-pressed', on);
+  if (on) $('panel').hidden = true;
+}
+$('b3d').onclick = () => showText(false);
+$('btext').onclick = () => showText(true);
+</script>
+</body>
+</html>
