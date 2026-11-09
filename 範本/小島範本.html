@@ -7,37 +7,50 @@
 <!--
   使用方法：
   1. 在電腦上雙擊這個檔案，用 Chrome 或 Safari 打開（不用網路；旁邊的 lib 資料夾要一起留著）。
-  2. 用記事本打開這個檔案，只改下面「改這裡」那一段的島名和島嶼內容，存檔後重新整理。
+  2. 用記事本打開這個檔案，只改下面「改這裡」那一段，存檔後重新整理。
   3. 想加更多功能，把整個檔案貼給 Claude，說「用這個範本幫我加上【功能】」。
 -->
 <style>
-:root{--ink:#1B382B;--muted:#4f6357;--paper:#fffaf0;--line:#d9ccb2;--accent:#b8501f;--sea:#bfe3e8}
+:root{--ink:#1B382B;--muted:#4a5e52;--paper:#fffaf0;--line:#d9ccb2;--accent:#b4501f}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);background:var(--sea)}
+html,body{margin:0;height:100%;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;color:var(--ink);overflow:hidden}
+body{background:linear-gradient(#9fd3e6 0%,#cfeaf0 55%,#e9f4ee 100%)}
 #scene{position:fixed;inset:0}
 #scene canvas{display:block;width:100%;height:100%;touch-action:none}
 .labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
-.lab{position:absolute;transform:translate(-50%,-100%);background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700;white-space:nowrap;pointer-events:auto;cursor:pointer;min-height:32px}
+.lab{position:absolute;transform:translate(-50%,-100%);background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:0 14px;font:700 14px/1 inherit;font-family:inherit;white-space:nowrap;pointer-events:auto;cursor:pointer;min-height:36px;min-width:44px;box-shadow:0 3px 8px rgba(20,40,30,.18)}
 .lab:hover,.lab:focus-visible,.lab.on{background:var(--ink);color:var(--paper);outline:none}
+.lab:focus-visible{box-shadow:0 0 0 3px var(--paper),0 0 0 6px var(--accent)}
 header{position:fixed;left:16px;top:16px;right:16px;display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;pointer-events:none}
 .card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 16px;box-shadow:0 4px 16px rgba(20,40,30,.12);pointer-events:auto}
 h1{margin:0;font-size:22px}
 .sub{margin:2px 0 0;color:var(--muted);font-size:14px}
-.tabs{display:flex;gap:6px;margin-left:auto}
+.tabs{display:flex;gap:6px;margin-left:auto;padding:8px}
 button{font:inherit;font-size:15px;min-height:44px;min-width:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
-button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button[aria-pressed="true"],button.main{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+#intro{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(380px,calc(100% - 32px));text-align:center;padding:22px 20px 18px}
+#intro h2{margin:0 0 4px;font-size:24px}
+#intro .nums{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 16px;padding:0;list-style:none}
+#intro .nums li{background:#f2ead8;border-radius:10px;padding:8px 12px;font-size:15px;font-weight:700}
+#intro .row{display:flex;gap:8px;justify-content:center}
+#tourBar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;padding:8px 10px}
+#tourBar span{font-size:14px;padding:0 6px;color:var(--muted)}
 #panel{position:fixed;right:16px;bottom:16px;width:min(340px,calc(100% - 32px));max-height:50vh;overflow:auto}
-#panel[hidden],#text[hidden]{display:none}
 #panel h2{margin:0 0 6px;font-size:18px}
 #panel p{margin:0 0 8px;font-size:15px;line-height:1.6}
 #panel ul{margin:0;padding-left:20px;font-size:15px;line-height:1.7}
 .close{float:right;margin:-4px -6px 0 8px}
-#text{position:fixed;inset:88px 16px 16px;overflow:auto;max-width:720px;margin:0 auto}
+#text{position:fixed;inset:96px 16px 16px;overflow:auto;max-width:720px;margin:0 auto}
 #text h2{font-size:18px;margin:16px 0 4px}
 #text p,#text li{font-size:15px;line-height:1.7}
 .foot{font-size:13px;color:var(--muted);margin-top:16px}
-@media (max-width:600px){#panel{right:16px;left:16px;width:auto;max-height:42vh}h1{font-size:19px}}
+[hidden]{display:none!important}
+@media (max-width:600px){
+  #panel{left:16px;right:16px;width:auto;max-height:40vh}
+  #tourBar{bottom:12px}
+  h1{font-size:19px}.lab{font-size:13px;padding:0 10px}
+}
 </style>
 </head>
 <body>
@@ -45,19 +58,31 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 <div class="labels" id="labels"></div>
 
 <header>
-  <div class="card"><h1 id="title"></h1><p class="sub" id="intro"></p></div>
+  <div class="card"><h1 id="title"></h1><p class="sub" id="lead"></p></div>
   <div class="tabs card" role="group" aria-label="檢視方式">
     <button id="b3d" aria-pressed="true">3D 島</button>
     <button id="btext" aria-pressed="false">文字版</button>
   </div>
 </header>
 
+<section id="intro" class="card" aria-labelledby="introT">
+  <h2 id="introT"></h2>
+  <p class="sub" id="introP"></p>
+  <ul class="nums" id="nums"></ul>
+  <div class="row"><button id="explore">自己逛逛</button><button id="tour" class="main">跟著導覽</button></div>
+</section>
+
+<div id="tourBar" class="card" hidden>
+  <span id="tourStep" aria-live="polite"></span>
+  <button id="tourNext">下一站</button><button id="tourEnd">結束導覽</button>
+</div>
+
 <section id="panel" class="card" hidden aria-live="polite">
-  <button class="close" id="close" aria-label="關閉說明">×</button>
+  <button class="close" id="close" aria-label="關閉說明，回到全景">×</button>
   <h2 id="pt"></h2><p id="pd"></p><ul id="pb"></ul>
 </section>
 
-<section id="text" class="card" hidden>
+<section id="text" class="card" hidden tabindex="0" aria-label="文字版">
   <div id="textBody"></div>
   <p class="foot">這是 3D 島的文字版，內容跟 3D 畫面一樣。</p>
 </section>
@@ -66,15 +91,18 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
 <script>
-/* ============ 改這裡：島名與島嶼內容 ============ */
+/* ==================== 改這裡 ==================== */
 const ISLAND = {
   name: '我的小島',
   intro: '一句話介紹：這座島代表什麼、給誰看',
+  // 第一層：打開就看到的數字，只放最重要的 2～3 個（只寫可以公開的）
+  numbers: ['4 座島', '本月 10 場活動'],
+  // 每座島：名字、在做什麼、裡面的小區塊、顏色、地標（house 房子／tower 燈塔／tent 帳篷／dome 圓頂，不寫就自動挑）
   isles: [
-    { name: '諮詢窗口', what: '第一次來的人先到這裡', blocks: ['櫃台', '等候區'], color: '#7fb77e' },
-    { name: '主教室島', what: '課程與工作坊場地', blocks: ['上午場', '下午場', '晚場'], color: '#e8a35a' },
-    { name: '共享工位', what: '夥伴平常工作的地方', blocks: ['流動工位', '會議桌'], color: '#6fa8c9' },
-    { name: '產品工坊', what: '自己的產品與作品', blocks: ['作品牆', '試用區'], color: '#c98fb5' }
+    { name: '諮詢窗口', what: '第一次來的人先到這裡', blocks: ['櫃台', '等候區'], color: '#6fbf73', landmark: 'tower' },
+    { name: '主教室島', what: '課程與工作坊場地', blocks: ['上午場', '下午場', '晚場'], color: '#f0a04b', landmark: 'house' },
+    { name: '共享工位', what: '夥伴平常工作的地方', blocks: ['流動工位', '會議桌'], color: '#5aa6d6', landmark: 'dome' },
+    { name: '產品工坊', what: '自己的產品與作品', blocks: ['作品牆', '試用區'], color: '#d98cc0', landmark: 'tent' }
   ]
 };
 /* ============ 改到這裡就好，下面是程式 ============ */
@@ -82,150 +110,255 @@ const ISLAND = {
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-$('title').textContent = ISLAND.name;
-$('intro').textContent = ISLAND.intro;
 document.title = ISLAND.name;
-
-// 文字版
+$('title').textContent = ISLAND.name; $('lead').textContent = ISLAND.intro;
+$('introT').textContent = '歡迎來到' + ISLAND.name; $('introP').textContent = ISLAND.intro;
+$('nums').innerHTML = (ISLAND.numbers || []).slice(0, 3).map(n => `<li>${esc(n)}</li>`).join('');
 $('textBody').innerHTML = `<h1 style="font-size:20px;margin:0">${esc(ISLAND.name)}</h1><p>${esc(ISLAND.intro)}</p>` +
-  ISLAND.isles.map(i => `<h2>${esc(i.name)}</h2><p>${esc(i.what)}</p><ul>${i.blocks.map(b => `<li>${esc(b)}</li>`).join('')}</ul>`).join('');
+  ((ISLAND.numbers || []).length ? `<ul>${ISLAND.numbers.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '') +
+  ISLAND.isles.map(i => `<h2>${esc(i.name)}</h2><p>${esc(i.what)}</p><ul>${(i.blocks || []).map(b => `<li>${esc(b)}</li>`).join('')}</ul>`).join('');
+
+function showText(on) {
+  $('text').hidden = !on; $('scene').style.visibility = on ? 'hidden' : '';
+  $('b3d').setAttribute('aria-pressed', !on); $('btext').setAttribute('aria-pressed', on);
+  if (on) { $('panel').hidden = true; $('intro').hidden = true; $('tourBar').hidden = true; $('text').focus(); }
+}
+$('b3d').onclick = () => showText(false);
+$('btext').onclick = () => showText(true);
 
 if (!window.THREE) {
-  // 沒網路時，至少看得到文字版
-  showText(true);
-  $('b3d').disabled = true;
+  showText(true); $('b3d').disabled = true;
   $('textBody').insertAdjacentHTML('afterbegin', '<p><b>3D 引擎沒有載入：</b>請確認這個檔案旁邊有 lib 資料夾，再重新整理。</p>');
-} else {
-  start();
-}
+} else start();
 
 function start() {
-  const host = $('scene');
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  /* ---------- 舞台：畫布、鏡頭、光 ---------- */
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-  host.appendChild(renderer.domElement);
-
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+  $('scene').appendChild(renderer.domElement);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#bfe3e8');
-  scene.fog = new THREE.Fog('#bfe3e8', 60, 140);
-  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
-  cam.position.set(0, 22, 26);
+  scene.fog = new THREE.Fog('#d6eef0', 60, 160);
+  const cam = new THREE.PerspectiveCamera(32, 1, 0.1, 400);
+  cam.position.set(0, 24, 27);
   const ctl = new THREE.OrbitControls(cam, renderer.domElement);
-  ctl.enableDamping = !reduce;
-  ctl.maxPolarAngle = 1.25; ctl.minDistance = 10;
+  ctl.enableDamping = !reduce; ctl.maxPolarAngle = 1.2; ctl.minDistance = 8; ctl.enablePan = false;
 
-  scene.add(new THREE.HemisphereLight('#fff6e0', '#5d8f8c', 0.6));
-  const sun = new THREE.DirectionalLight('#ffe2b0', 1.35);
-  sun.position.set(12, 20, 8); sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, { left: -20, right: 20, top: 20, bottom: -20 });
+  scene.add(new THREE.HemisphereLight('#fff4dc', '#4f8c8a', 0.65));
+  const sun = new THREE.DirectionalLight('#ffe0ad', 1.3);
+  sun.position.set(14, 22, 10); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22 }); sun.shadow.bias = -0.0006;
   scene.add(sun);
+  const fill = new THREE.DirectionalLight('#b9d8ff', 0.3); fill.position.set(-12, 8, -10); scene.add(fill);
 
-  // 海
-  const sea = new THREE.Mesh(new THREE.CircleGeometry(80, 48), new THREE.MeshStandardMaterial({ color: '#3f9fae', roughness: 0.5 }));
-  sea.rotation.x = -Math.PI / 2; sea.position.y = -0.4; sea.receiveShadow = true; scene.add(sea);
+  const M = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: 0.85 }, o));
+  const mesh = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m; };
+  const lighten = (hex, t) => '#' + new THREE.Color(hex).lerp(new THREE.Color('#ffffff'), t).getHexString();
+
+  /* ---------- 海：會輕輕起伏 ---------- */
+  const seaGeo = new THREE.PlaneGeometry(260, 260, 60, 60); seaGeo.rotateX(-Math.PI / 2);
+  const sea = new THREE.Mesh(seaGeo, M('#2f97ad', { roughness: 0.35, metalness: 0.05 }));
+  sea.position.y = -0.45; sea.receiveShadow = true; scene.add(sea);
+  const seaBase = seaGeo.attributes.position.array.slice();
 
   const hex = new THREE.CylinderGeometry(1, 1, 1, 6);
-  const sand = new THREE.MeshStandardMaterial({ color: '#f0d9a8', roughness: 0.9 });
-  const M = c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.8 });
+  const sandM = M('#efd9a7'), stoneM = M('#b9ad97'), trunkM = M('#8a5f3c'), leafM = M('#4f9152'), leaf2M = M('#6aab5a'), whiteM = M('#fff8ec');
+  const halo = (r, parent, x = 0, z = 0) => { const h = new THREE.Mesh(new THREE.CircleGeometry(r, 40), new THREE.MeshBasicMaterial({ color: '#8fd3d6', transparent: true, opacity: 0.55, depthWrite: false })); h.rotation.x = -Math.PI / 2; h.position.set(x, -0.38, z); parent.add(h); };
 
-  // 中央廣場
-  const hub = new THREE.Mesh(hex, sand); hub.scale.set(2.4, 0.6, 2.4); hub.receiveShadow = true; scene.add(hub);
+  /* ---------- 小零件：樹、石頭 ---------- */
+  function tree(parent, x, z, s = 1) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); parent.add(g);
+    mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.4, 6), trunkM, g, 0, 0.2, 0);
+    mesh(new THREE.ConeGeometry(0.38, 0.6, 7), leafM, g, 0, 0.62, 0);
+    mesh(new THREE.ConeGeometry(0.28, 0.45, 7), leaf2M, g, 0, 0.92, 0);
+    return g;
+  }
+  const rock = (parent, x, z, s) => { const r = mesh(new THREE.DodecahedronGeometry(0.22 * s, 0), stoneM, parent, x, 0.05, z); r.rotation.set(x, z, 0); };
 
-  const n = ISLAND.isles.length, R = n > 4 ? 9 : 8;
+  /* ---------- 四種地標 ---------- */
+  function landmark(kind, color, parent) {
+    const g = new THREE.Group(); parent.add(g); const c = M(color);
+    if (kind === 'tower') g.scale.setScalar(1.35);
+    if (kind === 'tower') {        // 燈塔：紅白條紋
+      for (let i = 0; i < 4; i++) mesh(new THREE.CylinderGeometry(0.42 - i * 0.05, 0.46 - i * 0.05, 0.42, 14), i % 2 ? whiteM : c, g, 0, 0.21 + i * 0.42, 0);
+      mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.32, 12), M('#fff3b0', { emissive: '#ffe07a', emissiveIntensity: 0.6 }), g, 0, 1.86, 0);
+      mesh(new THREE.ConeGeometry(0.38, 0.4, 12), c, g, 0, 2.22, 0);
+    } else if (kind === 'tent') {  // 帳篷咖啡亭
+      mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6), trunkM, g, 0, 0.55, 0);
+      const top = mesh(new THREE.ConeGeometry(1.05, 0.55, 8), c, g, 0, 1.2, 0); top.rotation.y = Math.PI / 8;
+      mesh(new THREE.BoxGeometry(0.9, 0.45, 0.45), whiteM, g, 0, 0.23, 0.3);
+      [-0.55, 0.55].forEach(x => mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.32, 10), M('#c98a55'), g, x, 0.16, 0.85));
+    } else if (kind === 'dome') {  // 圓頂工坊
+      mesh(new THREE.CylinderGeometry(0.85, 0.9, 0.5, 18), whiteM, g, 0, 0.25, 0);
+      mesh(new THREE.SphereGeometry(0.85, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), c, g, 0, 0.5, 0);
+      mesh(new THREE.BoxGeometry(0.36, 0.42, 0.1), M('#6b4a32'), g, 0, 0.21, 0.88);
+    } else {                       // 房子：兩層＋斜屋頂＋窗
+      mesh(new THREE.BoxGeometry(1.2, 0.85, 0.95), whiteM, g, 0, 0.43, 0);
+      const roof = mesh(new THREE.ConeGeometry(0.98, 0.65, 4), c, g, 0, 1.18, 0); roof.rotation.y = Math.PI / 4; roof.scale.z = 0.82;
+      mesh(new THREE.BoxGeometry(0.26, 0.42, 0.06), M('#6b4a32'), g, 0, 0.21, 0.48);
+      [-0.36, 0.36].forEach(x => mesh(new THREE.BoxGeometry(0.2, 0.2, 0.05), M('#9fd0e8'), g, x, 0.55, 0.48));
+      mesh(new THREE.BoxGeometry(0.16, 0.38, 0.16), M('#a0705a'), g, 0.32, 1.25, -0.1);
+    }
+    return g;
+  }
+
+  /* ---------- 中央廣場 ---------- */
+  const hubG = new THREE.Group(); scene.add(hubG);
+  halo(4.2, hubG);
+  mesh(hex, sandM, hubG, 0, -0.15, 0).scale.set(3.1, 0.5, 3.1);
+  mesh(hex, M('#e7e0cf'), hubG, 0, 0.12, 0).scale.set(2.3, 0.2, 2.3);
+  mesh(new THREE.CylinderGeometry(0.55, 0.65, 0.3, 16), stoneM, hubG, 0, 0.36, 0);
+  mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.06, 16), M('#7cc8d8', { roughness: 0.2 }), hubG, 0, 0.52, 0);
+
+  /* ---------- 每座島 ---------- */
+  const n = ISLAND.isles.length, R = n > 5 ? 10 : n > 4 ? 9.2 : 8.4, KINDS = ['house', 'tower', 'tent', 'dome'];
+  const walkers = [];
   const isles = ISLAND.isles.map((d, k) => {
     const a = k / n * Math.PI * 2 - Math.PI / 2, x = Math.cos(a) * R, z = Math.sin(a) * R;
     const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
-    // 六角地塊：中間一塊加周圍六塊，高低不一
-    const spots = [[0, 0]].concat([...Array(6)].map((_, j) => [Math.cos(j * Math.PI / 3) * 1.75, Math.sin(j * Math.PI / 3) * 1.75]));
+    const lift = new THREE.Group(); g.add(lift);            // 滑鼠移上去時整座島微微浮起
+    halo(3.6, g);
+    mesh(hex, sandM, lift, 0, -0.2, 0).scale.set(3.05, 0.4, 3.05);   // 沙灘底座
+    const grass = M(lighten(d.color, 0.1)), grassTop = M(d.color);
+    const spots = [[0, 0]].concat([...Array(6)].map((_, j) => [Math.cos(j * Math.PI / 3 + Math.PI / 6) * 1.72, Math.sin(j * Math.PI / 3 + Math.PI / 6) * 1.72]));
     spots.forEach(([px, pz], j) => {
-      const h = 0.6 + ((k * 7 + j * 3) % 4) * 0.12;
-      const t = new THREE.Mesh(hex, j ? sand : M(d.color));
-      t.scale.set(0.98, h, 0.98); t.position.set(px, h / 2 - 0.3, pz);
-      t.castShadow = t.receiveShadow = true; g.add(t);
+      const h = 0.35 + ((k * 5 + j * 3) % 4) * 0.08 + (j ? 0 : 0.12);
+      mesh(hex, j ? grass : grassTop, lift, px, h / 2, pz).scale.set(0.97, h, 0.97);
     });
-    // 小房子
-    const house = new THREE.Group(); house.position.y = 0.55; g.add(house);
-    const wall = new THREE.Mesh(new THREE.BoxGeometry(1, 0.8, 0.9), M('#fff8ec')); wall.position.y = 0.4; wall.castShadow = true; house.add(wall);
-    const roof = new THREE.Mesh(new THREE.ConeGeometry(0.85, 0.6, 4), M(d.color)); roof.position.y = 1.1; roof.rotation.y = Math.PI / 4; roof.castShadow = true; house.add(roof);
-    // 小樹
-    [[1.6, 0.6], [-1.3, 1.1], [0.4, -1.6]].forEach(([tx, tz]) => {
-      const tree = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), M('#4f8a4f'));
-      tree.position.set(tx, 1.0, tz); tree.castShadow = true; g.add(tree);
-    });
-    // 橋
-    const len = R - 4.2, bridge = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, len), M('#b88a5a'));
-    bridge.position.set(Math.cos(a) * (2.4 + len / 2), 0.05, Math.sin(a) * (2.4 + len / 2));
-    bridge.rotation.y = -a + Math.PI / 2; bridge.receiveShadow = true; scene.add(bridge);
+    const top = 0.47 + ((k * 5) % 4) * 0.08;
+    const lm = landmark(d.landmark || KINDS[k % 4], d.color, lift); lm.position.y = top;
+    [[1.55, 0.7, 1], [-1.35, 1.0, 0.85], [0.5, -1.65, 1.1], [-1.2, -1.0, 0.75]].forEach(([tx, tz, s], j) => tree(lift, tx, tz, s).position.y = 0.35 + ((k * 5 + (j + 1) * 3) % 4) * 0.08);
+    rock(g, 2.5, 1.2, 1.2); rock(g, -2.3, -1.5, 0.9); rock(g, 1.0, -2.6, 0.7);
+
+    // 橋：木板＋扶手
+    const len = R - 5.0, bx = Math.cos(a) * (2.65 + len / 2), bz = Math.sin(a) * (2.65 + len / 2);
+    const bridge = new THREE.Group(); bridge.position.set(bx, 0.12, bz); bridge.rotation.y = -a + Math.PI / 2; scene.add(bridge);
+    mesh(new THREE.BoxGeometry(0.85, 0.1, len), M('#c0915e'), bridge);
+    [-0.4, 0.4].forEach(sx => mesh(new THREE.BoxGeometry(0.06, 0.06, len), M('#8a5f3c'), bridge, sx, 0.28, 0));
+    for (let i = 0; i <= 4; i++) [-0.4, 0.4].forEach(sx => mesh(new THREE.BoxGeometry(0.07, 0.3, 0.07), M('#8a5f3c'), bridge, sx, 0.15, -len / 2 + i * len / 4));
+
+    // 一位在橋上來回走的島民
+    const w = new THREE.Group(); scene.add(w);
+    mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.36, 10), M(d.color), w, 0, 0.3, 0);
+    mesh(new THREE.SphereGeometry(0.13, 12, 10), M('#f3d2b3'), w, 0, 0.6, 0);
+    walkers.push({ w, a, from: 2.3, to: R - 2.4, ph: k * 1.7 });
+
     // 名牌（按鈕，鍵盤可操作）
     const lab = document.createElement('button');
     lab.className = 'lab'; lab.textContent = d.name; lab.setAttribute('aria-label', `${d.name}：看說明`);
     lab.onclick = () => pick(k);
     $('labels').appendChild(lab);
-    return { d, g, house, lab, pos: new THREE.Vector3(x, 0, z) };
+    return { d, g, lift, lab, pos: new THREE.Vector3(x, 0, z), labY: top + 2.6 };
   });
 
-  // 點島：鏡頭飛過去、顯示說明
-  let target = new THREE.Vector3(), fly = 0, cur = -1;
-  function pick(k) {
+  /* ---------- 雲和小船 ---------- */
+  const clouds = [...Array(5)].map((_, i) => {
+    const c = new THREE.Group(); const cm = M('#ffffff', { roughness: 1, transparent: true, opacity: 0.92 });
+    [[0, 0, 0, 1], [0.9, -0.1, 0.2, 0.75], [-0.9, -0.15, -0.1, 0.7], [0.3, 0.35, 0, 0.6]].forEach(([x, y, z, s]) => { const p = new THREE.Mesh(new THREE.SphereGeometry(s, 12, 10), cm); p.position.set(x, y, z); c.add(p); });
+    c.position.set(-34 + i * 16, 10 + (i % 2) * 2, -R - 9 - (i % 3) * 3); /* 雲放在島的後上方，不擋島 */ c.scale.setScalar(1.1 + (i % 3) * 0.3); scene.add(c); return c;
+  });
+  const boat = new THREE.Group(); scene.add(boat);
+  mesh(new THREE.BoxGeometry(1.2, 0.3, 0.5), M('#a8683f'), boat, 0, 0, 0);
+  mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6), trunkM, boat, 0, 0.6, 0);
+  const sail = mesh(new THREE.ConeGeometry(0.45, 0.95, 3), whiteM, boat, 0.18, 0.7, 0); sail.scale.z = 0.12;
+
+  /* ---------- 鏡頭：依螢幕比例自動取景，點島時飛過去拉近 ---------- */
+  const HOME = new THREE.Vector3(0, 0, 1.2); /* 全景中心略往前，前排的島才不會被切到 */
+  let homeDist = 40, wantTarget = HOME.clone(), wantDist = 40, flying = false, cur = -1;
+  function resize() {
+    renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
+    const fit = R + 4, vt = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+    homeDist = Math.max(fit / vt, fit / (vt * cam.aspect)) * (cam.aspect < 1 ? 0.98 : 0.82); /* 手機直式多留一點邊 */
+    ctl.maxDistance = homeDist * 1.6; scene.fog.near = homeDist * 1.3; scene.fog.far = homeDist * 3.2;
+    if (cur < 0) { wantDist = homeDist; jump(); }
+  }
+  const camDir = () => cam.position.clone().sub(ctl.target).normalize();
+  function jump() { const dir = camDir(); ctl.target.copy(wantTarget); cam.position.copy(wantTarget).add(dir.multiplyScalar(wantDist)); } /* 先算方向再搬鏡頭，順序反了方向會變成零 */
+  function flyTo(target, dist) { wantTarget.copy(target); wantDist = dist; if (reduce) jump(); else flying = true; }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- 點島、說明面板、導覽 ---------- */
+  function pick(k, fromTour) {
     cur = k; const i = isles[k];
     isles.forEach((o, j) => o.lab.classList.toggle('on', j === k));
     $('pt').textContent = i.d.name; $('pd').textContent = i.d.what;
-    $('pb').innerHTML = i.d.blocks.map(b => `<li>${esc(b)}</li>`).join('');
-    $('panel').hidden = false;
-    target.copy(i.pos); fly = reduce ? 1 : 0.0001;
-    if (reduce) { ctl.target.copy(target); }
+    $('pb').innerHTML = (i.d.blocks || []).map(b => `<li>${esc(b)}</li>`).join('');
+    $('panel').hidden = false; $('intro').hidden = true;
+    if (!fromTour) stopTour();
+    flyTo(i.pos, homeDist * 0.5);
   }
-  $('close').onclick = () => { $('panel').hidden = true; isles.forEach(o => o.lab.classList.remove('on')); if (cur >= 0) isles[cur].lab.focus(); cur = -1; target.set(0, 0, 0); fly = reduce ? 1 : 0.0001; if (reduce) ctl.target.set(0, 0, 0); };
-  addEventListener('keydown', e => { if (e.key === 'Escape' && !$('panel').hidden) $('close').onclick(); });
+  function home() {
+    cur = -1; $('panel').hidden = true; isles.forEach(o => o.lab.classList.remove('on'));
+    flyTo(HOME, homeDist);
+  }
+  $('close').onclick = () => { const k = cur; stopTour(); home(); if (k >= 0) isles[k].lab.focus(); };
+  addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('panel').hidden || touring) { $('close').onclick(); } else if (!$('intro').hidden) $('explore').onclick(); } });
 
-  // 點 3D 畫面上的島也可以
-  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null;
-  renderer.domElement.addEventListener('pointerdown', e => down = [e.clientX, e.clientY]);
+  let touring = false, tourIdx = 0, tourTimer = 0;
+  function tourGo(i) {
+    tourIdx = i; pick(i, true);
+    $('tourStep').textContent = `第 ${i + 1} 站／共 ${n} 站：${isles[i].d.name}`;
+    clearTimeout(tourTimer);
+    if (!reduce) tourTimer = setTimeout(() => tourIdx + 1 < n ? tourGo(tourIdx + 1) : endTour(), 5000);
+    $('tourNext').textContent = i + 1 < n ? '下一站' : '回到全景';
+  }
+  function stopTour() { touring = false; clearTimeout(tourTimer); $('tourBar').hidden = true; }
+  function endTour() { stopTour(); home(); }
+  $('tour').onclick = () => { $('intro').hidden = true; touring = true; $('tourBar').hidden = false; tourGo(0); $('tourNext').focus(); };
+  $('tourNext').onclick = () => tourIdx + 1 < n ? tourGo(tourIdx + 1) : endTour();
+  $('tourEnd').onclick = () => { endTour(); $('b3d').focus(); };
+  $('explore').onclick = () => { $('intro').hidden = true; (isles[0] && isles[0].lab).focus(); };
+  $('tour').focus();
+
+  /* ---------- 滑鼠：移上去亮、點下去看說明 ---------- */
+  const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(); let down = null, hover = -1;
+  const isleAt = e => {
+    mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(mouse, cam);
+    const hit = ray.intersectObjects(isles.map(o => o.g), true)[0]; if (!hit) return -1;
+    return isles.findIndex(o => { let p = hit.object; while (p) { if (p === o.g) return true; p = p.parent; } return false; });
+  };
+  renderer.domElement.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; flying = false; });
+  renderer.domElement.addEventListener('pointermove', e => { if (e.pointerType !== 'mouse') return; hover = isleAt(e); renderer.domElement.style.cursor = hover >= 0 ? 'pointer' : ''; });
   renderer.domElement.addEventListener('pointerup', e => {
     if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
-    mouse.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
-    ray.setFromCamera(mouse, cam);
-    const hit = ray.intersectObjects(isles.map(o => o.g), true)[0];
-    if (hit) { const k = isles.findIndex(o => { let p = hit.object; while (p) { if (p === o.g) return true; p = p.parent; } return false; }); if (k >= 0) pick(k); }
+    const k = isleAt(e); if (k >= 0) pick(k);
   });
 
-  function resize() {
-    renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
-    // 依螢幕比例算鏡頭距離，讓整圈島都在畫面裡（手機直式會拉遠一點）
-    const fit = R + 4, vt = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)), d = Math.max(fit / vt, fit / (vt * cam.aspect)) * 0.82;
-    const dir = cam.position.clone().sub(ctl.target).setLength(d); cam.position.copy(ctl.target).add(dir); ctl.maxDistance = d * 1.6; scene.fog.near = d * 1.2; scene.fog.far = d * 3;
-  }
-  addEventListener('resize', resize); resize();
-
-  const v = new THREE.Vector3(), clock = new THREE.Clock();
+  /* ---------- 每一格畫面 ---------- */
+  const v = new THREE.Vector3(), clock = new THREE.Clock(), pos = seaGeo.attributes.position;
   (function loop() {
     requestAnimationFrame(loop);
     const t = clock.getElapsedTime();
-    if (fly > 0 && fly < 1) { fly = Math.min(1, fly + 0.03); ctl.target.lerp(target, 0.08); if (fly >= 1) ctl.target.copy(target); }
-    if (!reduce) isles.forEach((o, k) => { o.house.position.y = 0.55 + Math.sin(t * 1.2 + k) * 0.04; });
+    if (flying) {
+      const dir = camDir(), d = cam.position.distanceTo(ctl.target), nd = d + (wantDist - d) * 0.07;
+      ctl.target.lerp(wantTarget, 0.07);
+      cam.position.copy(ctl.target).add(dir.multiplyScalar(nd));
+      if (ctl.target.distanceTo(wantTarget) < 0.02 && Math.abs(nd - wantDist) < 0.05) flying = false;
+    }
+    if (!reduce) {
+      for (let i = 0; i < pos.count; i++) { const x = seaBase[i * 3], z = seaBase[i * 3 + 2]; pos.array[i * 3 + 1] = Math.sin(x * 0.35 + t * 0.9) * 0.06 + Math.cos(z * 0.3 + t * 0.7) * 0.06; }
+      pos.needsUpdate = true;
+      walkers.forEach(o => { const s = (Math.sin(t * 0.35 + o.ph) + 1) / 2, r = o.from + (o.to - o.from) * s, dir = Math.cos(t * 0.35 + o.ph) > 0 ? 0 : Math.PI;
+        o.w.position.set(Math.cos(o.a) * r, 0.17 + Math.abs(Math.sin(t * 6 + o.ph)) * 0.04, Math.sin(o.a) * r); o.w.rotation.y = -o.a + dir; });
+      clouds.forEach((c, i) => { c.position.x += 0.008 + i * 0.002; if (c.position.x > 40) c.position.x = -40; });
+      const ba = t * 0.08, br = R + 6.5; boat.position.set(Math.cos(ba) * br, -0.3 + Math.sin(t * 1.5) * 0.04, Math.sin(ba) * br); boat.rotation.y = -ba;
+    } else {
+      walkers.forEach(o => { const r = (o.from + o.to) / 2; o.w.position.set(Math.cos(o.a) * r, 0.17, Math.sin(o.a) * r); o.w.rotation.y = -o.a; });
+      boat.position.set(R + 6.5, -0.3, 0);
+    }
+    isles.forEach((o, k) => { const want = (k === hover || k === cur) ? 0.18 : 0; o.lift.position.y += reduce ? want - o.lift.position.y : (want - o.lift.position.y) * 0.15; });
     ctl.update();
     renderer.render(scene, cam);
-    // 名牌跟著島走
+    const hide = !$('text').hidden;
     isles.forEach(o => {
-      v.copy(o.pos); v.y = 2.4; v.project(cam);
-      const off = v.z > 1;
-      o.lab.style.display = off || !$('text').hidden ? 'none' : '';
-      o.lab.style.left = (v.x + 1) / 2 * innerWidth + 'px';
-      o.lab.style.top = (1 - v.y) / 2 * innerHeight + 'px';
+      v.copy(o.pos); v.y = o.labY + o.lift.position.y; v.project(cam);
+      o.lab.style.display = hide || v.z > 1 ? 'none' : '';
+      o.lab.style.left = (v.x + 1) / 2 * innerWidth + 'px'; o.lab.style.top = (1 - v.y) / 2 * innerHeight + 'px';
+      o.lab.classList.toggle('on', o === isles[cur] || o === isles[hover]);
     });
   })();
 }
-
-function showText(on) {
-  $('text').hidden = !on; $('scene').style.visibility = on ? 'hidden' : '';
-  $('b3d').setAttribute('aria-pressed', !on); $('btext').setAttribute('aria-pressed', on);
-  if (on) $('panel').hidden = true;
-}
-$('b3d').onclick = () => showText(false);
-$('btext').onclick = () => showText(true);
 </script>
 </body>
 </html>
