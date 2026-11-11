@@ -31,6 +31,7 @@ h1{margin:0;font-size:22px}
 button{font:inherit;font-size:15px;min-height:44px;min-width:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
 button[aria-pressed="true"],button.main{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+body.intro header>.card:first-child{visibility:hidden}
 #intro{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);width:min(380px,calc(100% - 32px));text-align:center;padding:22px 20px 18px}
 #intro h2{margin:0 0 4px;font-size:24px}
 #intro .nums{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 16px;padding:0;list-style:none}
@@ -41,8 +42,8 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 #panel{position:fixed;right:16px;bottom:16px;width:min(340px,calc(100% - 32px));max-height:50vh;overflow:auto}
 #panel h2{margin:0 0 6px;font-size:18px}
 #panel p{margin:0 0 8px;font-size:15px;line-height:1.6}
-#panel ul{margin:4px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
-#panel li{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:18px;background:#f3eedf;border:1px solid var(--line);font-size:14px;font-weight:700}
+#panel ul{margin:2px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:2px 0;font-size:15px;color:var(--muted)}
+#panel li{white-space:nowrap}#panel li+li::before{content:'・';padding:0 4px}
 .close{float:right;margin:-4px -6px 0 8px}
 #text{position:fixed;inset:96px 16px 16px;overflow:auto;max-width:720px;margin:0 auto}
 #text h2{font-size:18px;margin:16px 0 4px}
@@ -53,7 +54,7 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media (max-width:600px){
   #panel{left:16px;right:16px;width:auto;max-height:40vh}
   #tourBar{bottom:12px}
-  h1{font-size:18px}.sub{font-size:13px}.lab{font-size:13px;padding:0 10px}
+  h1{font-size:18px}.sub{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}.lab{font-size:13px;padding:0 10px}
   header .card{padding:10px 12px}.tabs{padding:6px;gap:4px}.tabs button{padding:0 10px;font-size:14px}
   #intro{bottom:16px}.credit{display:none}
 }
@@ -101,18 +102,19 @@ button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 <script>
 /* ==================== 改這裡 ==================== */
 const ISLAND = {
-  name: '我的小島',
-  intro: '一句話介紹：這座島代表什麼、給誰看',
-  // 第一層：打開就看到的數字，只放最重要的 2～3 個（只寫可以公開的）
-  numbers: ['4 座島', '【改成你的數字】'],
+  // ↓ 下面是一座「範例島」，整段換成你的內容就好（範例資料.md 還有個人品牌、社群兩種可以照抄）
+  name: '小島咖啡',
+  intro: '一間給附近上班族的安靜咖啡店（範例）',
+  // 第一層：打開就看到的數字，只放最重要的 2～3 個（只寫可以公開、而且是真的）
+  numbers: ['平日 8:00 開門', '週末手作課'],
   // 中間那座廣場叫什麼（例如你的品牌名、店名）
-  center: '入口廣場',
-  // 每座島：名字、在做什麼、裡面的小區塊、顏色、地標（house 房子／tower 燈塔／tent 帳篷／dome 圓頂，不寫就自動挑）
+  center: '店門口',
+  // 每座島：名字、在做什麼、裡面的小區塊、顏色、地標（house 房子／tower 燈塔／tent 帳篷／dome 圓頂）
   isles: [
-    { name: '諮詢窗口', what: '第一次來的人先到這裡', blocks: ['櫃台', '等候區'], color: '#6fbf73', landmark: 'tower' },
-    { name: '主教室島', what: '課程與工作坊場地', blocks: ['上午場', '下午場', '晚場'], color: '#f0a04b', landmark: 'house' },
-    { name: '共享工位', what: '夥伴平常工作的地方', blocks: ['流動工位', '會議桌'], color: '#5aa6d6', landmark: 'dome' },
-    { name: '產品工坊', what: '自己的產品與作品', blocks: ['作品牆', '試用區'], color: '#d98cc0', landmark: 'tent' }
+    { name: '櫃台', what: '點餐、詢問、預約都在這裡', blocks: ['菜單', '預約', '會員'], color: '#f0a04b', landmark: 'tent' },
+    { name: '座位區', what: '坐下來待一下午的地方', blocks: ['窗邊座', '大桌', '插座位'], color: '#6fbf73', landmark: 'house' },
+    { name: '活動角', what: '店裡辦的小活動和課程', blocks: ['手作課', '讀書會', '包場'], color: '#d98cc0', landmark: 'dome' },
+    { name: '招牌商品', what: '來了一定要試的東西', blocks: ['人氣第一', '季節限定', '外帶禮盒'], color: '#5aa6d6', landmark: 'tower' }
   ]
 };
 /* ============ 改到這裡就好，下面是程式 ============ */
@@ -123,6 +125,7 @@ const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.title = ISLAND.name;
 $('title').textContent = ISLAND.name; $('lead').textContent = ISLAND.intro;
 $('introT').textContent = '歡迎來到' + ISLAND.name; $('introP').textContent = ISLAND.intro;
+document.body.classList.add('intro');
 $('nums').innerHTML = (ISLAND.numbers || []).slice(0, 3).map(n => `<li>${esc(n)}</li>`).join('');
 $('textBody').innerHTML = `<h1 style="font-size:20px;margin:0">${esc(ISLAND.name)}</h1><p>${esc(ISLAND.intro)}</p>` +
   ((ISLAND.numbers || []).length ? `<ul>${ISLAND.numbers.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : '') +
@@ -131,7 +134,7 @@ $('textBody').innerHTML = `<h1 style="font-size:20px;margin:0">${esc(ISLAND.name
 function showText(on) {
   $('text').hidden = !on; $('scene').style.visibility = on ? 'hidden' : '';
   $('b3d').setAttribute('aria-pressed', !on); $('btext').setAttribute('aria-pressed', on);
-  if (on) { $('panel').hidden = true; $('intro').hidden = true; $('tourBar').hidden = true; $('text').focus(); }
+  if (on) { $('panel').hidden = true; $('intro').hidden = true; document.body.classList.remove('intro'); $('tourBar').hidden = true; $('text').focus(); }
 }
 $('b3d').onclick = () => showText(false);
 $('btext').onclick = () => showText(true);
@@ -266,7 +269,7 @@ function start() {
   const hubLab = document.createElement('button'); hubLab.className = 'lab'; hubLab.textContent = ISLAND.center || '入口廣場';
   hubLab.setAttribute('aria-label', `${hubLab.textContent}：看島的介紹`);
   hubLab.onclick = () => { cur = -1; isles.forEach(o => o.lab.classList.remove('on')); $('pt').textContent = hubLab.textContent; $('pd').textContent = ISLAND.intro;
-    $('pb').innerHTML = (ISLAND.numbers || []).map(b => `<li>${esc(b)}</li>`).join(''); $('panel').hidden = false; $('intro').hidden = true; stopTour(); flyTo(new THREE.Vector3(), homeDist * 0.55); };
+    $('pb').innerHTML = (ISLAND.numbers || []).map(b => `<li>${esc(b)}</li>`).join(''); $('panel').hidden = false; $('intro').hidden = true; document.body.classList.remove('intro'); stopTour(); flyTo(new THREE.Vector3(), homeDist * 0.55); };
   $('labels').insertBefore(hubLab, $('labels').firstChild);
 
   /* ---------- 雲和小船 ---------- */
@@ -286,7 +289,7 @@ function start() {
   function resize() {
     renderer.setSize(innerWidth, innerHeight); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix();
     const fit = R + 4, vt = Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
-    homeDist = Math.max(fit / vt, fit / (vt * cam.aspect)) * (cam.aspect < 1 ? 0.98 : 0.82); /* 手機直式多留一點邊 */
+    homeDist = Math.max(fit / vt, fit / (vt * cam.aspect)) * (cam.aspect < 1 ? 0.98 : 0.78); /* 手機直式多留一點邊 */
     ctl.maxDistance = homeDist * 1.6; scene.fog.near = homeDist * 1.3; scene.fog.far = homeDist * 3.2;
     if (cur < 0) { wantDist = homeDist; jump(); }
   }
@@ -301,9 +304,9 @@ function start() {
     isles.forEach((o, j) => o.lab.classList.toggle('on', j === k));
     $('pt').textContent = i.d.name; $('pd').textContent = i.d.what;
     $('pb').innerHTML = (i.d.blocks || []).map(b => `<li>${esc(b)}</li>`).join('');
-    $('panel').hidden = false; $('intro').hidden = true;
+    $('panel').hidden = false; $('intro').hidden = true; document.body.classList.remove('intro');
     if (!fromTour) stopTour();
-    flyTo(i.pos, homeDist * 0.5);
+    flyTo(innerWidth < 600 ? i.pos.clone().add(new THREE.Vector3(0, 0, 2.2)) : i.pos, homeDist * 0.5); /* 手機：目標往前挪，島出現在下方資訊卡的上面 */
   }
   function home() {
     cur = -1; $('panel').hidden = true; isles.forEach(o => o.lab.classList.remove('on'));
@@ -322,10 +325,10 @@ function start() {
   }
   function stopTour() { touring = false; clearTimeout(tourTimer); $('tourBar').hidden = true; }
   function endTour() { stopTour(); home(); }
-  $('tour').onclick = () => { $('intro').hidden = true; touring = true; $('tourBar').hidden = false; tourGo(0); $('tourNext').focus(); };
+  $('tour').onclick = () => { $('intro').hidden = true; document.body.classList.remove('intro'); touring = true; $('tourBar').hidden = false; tourGo(0); $('tourNext').focus(); };
   $('tourNext').onclick = () => tourIdx + 1 < n ? tourGo(tourIdx + 1) : endTour();
   $('tourEnd').onclick = () => { endTour(); $('b3d').focus(); };
-  $('explore').onclick = () => { $('intro').hidden = true; (isles[0] && isles[0].lab).focus(); };
+  $('explore').onclick = () => { $('intro').hidden = true; document.body.classList.remove('intro'); (isles[0] && isles[0].lab).focus(); };
   $('tour').focus();
 
   /* ---------- 滑鼠：移上去亮、點下去看說明 ---------- */
