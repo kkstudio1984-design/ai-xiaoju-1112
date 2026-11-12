@@ -97,6 +97,19 @@ body.intro header>.card:first-child{visibility:hidden}
 </section>
 
 <!-- 3D 引擎（three.js r128，MIT 授權）放在旁邊的 lib 資料夾，沒網路也能打開；搬檔案時 lib 要一起帶走 -->
+<script>
+/* 小幫手：改壞的時候，在畫面上告訴你哪裡壞了（不用動這段） */
+window.__err = null;
+window.addEventListener('error', function (e) { if (!window.__err) window.__err = { msg: String(e.message || ''), line: e.lineno || 0 }; });
+function __help(title, tips) {
+  var d = document.createElement('div');
+  d.setAttribute('role', 'alert');
+  d.style.cssText = 'position:fixed;inset:16px;margin:auto;max-width:520px;height:fit-content;background:#fffaf0;color:#1B382B;border:3px solid #b4501f;border-radius:16px;padding:22px 24px;font:16px/1.7 "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;z-index:99;box-shadow:0 10px 40px rgba(0,0,0,.25)';
+  d.innerHTML = '<h2 style="margin:0 0 8px;font-size:21px">' + title + '</h2><ul style="margin:0;padding-left:1.2em">' + tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul><p style="margin:12px 0 0;color:#4a5e52;font-size:14px">\u9084\u662f\u4e0d\u884c\uff1a\u91cd\u65b0\u89e3\u58d3\u7e2e\u4e00\u4efd\u65b0\u7684\u7bc4\u672c\uff0c\u518d\u6539\u4e00\u6b21\u3002</p>';
+  document.body.appendChild(d);
+  ['header', '#intro', '.credit'].forEach(function (s) { var x = document.querySelector(s); if (x) x.style.display = 'none'; });
+}
+</script>
 <script src="lib/three.min.js"></script>
 <script src="lib/OrbitControls.js"></script>
 <script>
@@ -118,6 +131,28 @@ const ISLAND = {
   ]
 };
 /* ============ 改到這裡就好，下面是程式 ============ */
+</script>
+<script>
+(function () {
+  if (typeof THREE === 'undefined') {
+    __help('還沒解壓縮喔', ['請先在 ZIP 上按右鍵 →「全部解壓縮」（Mac 直接雙擊 ZIP）。', '再打開解壓縮後資料夾裡的「範本 → 小島範本.html」。', '直接在 ZIP 裡面雙擊，會找不到 3D 程式，畫面就會空白。']);
+    throw new Error('stop: no THREE');
+  }
+  if (typeof ISLAND === 'undefined') {
+    var e = window.__err || { msg: '', line: 0 }, m = e.msg, tips = [];
+    if (/Invalid or unexpected token|Unterminated|missing \) |illegal character/i.test(m)) tips.push('可能<b>刪到引號</b> \' ，或打成<b>全形符號</b>（，「」’）。改這裡的符號都要用<b>半形英文</b>的。');
+    if (/Unexpected token '\{'/.test(m)) tips.push('島和島之間<b>少了逗號</b>：每一行 { … } 後面都要有半形逗號 ,');
+    if (/Unexpected identifier|Unexpected string/.test(m)) tips.push('名字裡如果有 \' （例如 Tom\'s），請刪掉或改成全形 ’；也可能是少了逗號。');
+    if (/Unexpected token ':'|Unexpected token '\]'|Unexpected token '\}'/.test(m)) tips.push('可能<b>刪到中括號 [ ]</b> 或<b>大括號 { }</b>，跟範例對照看看。');
+    if (!tips.length) tips.push('改這裡那一段有符號被改到了：引號、逗號、括號都要跟範例一樣。');
+    if (e.line) tips.push('問題大約在記事本的<b>第 ' + e.line + ' 行</b>附近（記事本選單「檢視 → 狀態列」可以看到行號）。');
+    __help('島還沒出來：改這裡那一段有地方打錯', tips);
+    throw new Error('stop: config error');
+  }
+  if (/\uFFFD/.test(ISLAND.name + ISLAND.intro)) {
+    setTimeout(function () { __help('\u4e2d\u6587\u8b8a\u6210\u4e82\u78bc\u4e86', ['\u5b58\u6a94\u6642\uff0c\u8a18\u4e8b\u672c\u4e0b\u65b9\u7684\u300c\u7de8\u78bc\u300d\u8acb\u9078 <b>UTF-8</b>\uff0c\u518d\u5b58\u4e00\u6b21\u3002', '\uff08\u8a18\u4e8b\u672c\uff1a\u6a94\u6848 \u2192 \u53e6\u5b58\u65b0\u6a94 \u2192 \u4e0b\u65b9\u300c\u7de8\u78bc\u300d\u9078 UTF-8\uff09']); }, 0);
+  }
+})();
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
